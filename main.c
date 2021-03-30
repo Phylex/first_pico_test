@@ -2,6 +2,8 @@
 #include "pico/stdlib.h"
 #include "hardware/gpio.h"
 #include "pico/binary_info.h"
+#include "hardware/adc.h"
+#include "hardware/pwm.h
 
 const uint LED_PIN = 25;
 const uint POT_IN = 26;
@@ -24,8 +26,8 @@ int main() {
 	pwm_set_enabled(slice_num, true);
 	while (true) {
 		uint16_t adc_result = adc_read();
-		printf("Raw value: 0x%03x, voltage: %f V/n", result, result * conversion_factor);
-		pwm_set_chan_level(slice_num, PWM_CHAN_A, result);
+		printf("Raw value: 0x%03x, voltage: %f V/n", adc_result, adc_result * conversion_factor);
+		pwm_set_chan_level(slice_num, PWM_CHAN_A, adc_result);
 		sleep_ms(500);
 	}
 }

@@ -3,7 +3,7 @@
 #include "hardware/gpio.h"
 #include "pico/binary_info.h"
 #include "hardware/adc.h"
-#include "hardware/pwm.h
+#include "hardware/pwm.h"
 
 const uint LED_PIN = 25;
 const uint POT_IN = 26;

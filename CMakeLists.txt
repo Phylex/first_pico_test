@@ -15,4 +15,4 @@ pico_enable_stdio_usb(first_test 1)
 pico_enable_stdio_uart(first_test 0)
 pico_add_extra_outputs(first_test)
 
-target_link_libraries(first_test pico_stdlib)
+target_link_libraries(first_test pico_stdlib hardware_adc hardware_pwm)

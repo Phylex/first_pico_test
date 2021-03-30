@@ -28,7 +28,7 @@ int main() {
 	while (true) {
 		uint16_t adc_result = adc_read();
 		printf("Raw value: 0x%03x, shifted value: 0x%03x voltage: %f V\n", adc_result, (adc_result >> 6), adc_result * conversion_factor);
-		pwm_set_chan_level(slice_num, channel, (adc_result >> 6));
+		pwm_set_chan_level(slice, channel, (adc_result >> 6));
 		sleep_ms(500);
 	}
 }

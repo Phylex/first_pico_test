@@ -11,8 +11,27 @@ add_executable(first_test
 	main.c
 )
 
+add_executable(i2c_peripheral_trials
+	i2c_peripheral_trials.c
+)
+
 pico_enable_stdio_usb(first_test 1)
 pico_enable_stdio_uart(first_test 0)
 pico_add_extra_outputs(first_test)
 
-target_link_libraries(first_test pico_stdlib hardware_adc hardware_pwm)
+pico_enable_stdio_usb(i2c_peripheral_trials 1)
+pico_enable_stdio_uart(i2c_peripheral_trials 0)
+pico_add_extra_outputs(i2c_peripheral_trials)
+
+target_link_libraries(first_test 
+	pico_stdlib
+	hardware_adc
+	hardware_pwm
+)
+target_link_libraries(i2c_peripheral_trials
+	pico_stdlib
+	hardware_irq
+	hardware_adc
+	hardware_pwm
+	hardware_i2c
+)

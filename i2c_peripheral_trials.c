@@ -63,17 +63,21 @@ void i2c_handler() {
 	// Check to see if we have received data from the I2C controller
     if (status & I2C_IC_INTR_STAT_R_RX_FULL_BITS) {
 		// Read the data (this will clear the interrupt)
-		uint32_t cmd_reg = i2c0->hw->data_cmd;
-		uint8_t value = (uint8_t)(cmd_reg & I2C_IC_DATA_CMD_DAT_BITS);
+		uint8_t rx_fifo_level = (uint8_t)(i2c->hw->rxflr & I2C_IC_RXFLR_BITS);
+		for (uint8_t i = 0; i < rx_fifo_level; i++) {
 
-		// Check if this is the 1st byte we have received
-		if (cmd_reg & I2C_IC_DATA_CMD_FIRST_DATA_BYTE_BITS) {
-			// as this is a new message, reset the buffer pointer
-			bp = buffer;
-		}
-		if ((bp-buffer) < BUF_LEN) {
-			*bp = value;
-			bp ++;
+			// for every entry the data_cmd_reg needs to be read
+			uint32_t cmd_reg = i2c->hw->data_cmd;
+			uint8_t value = (uint8_t)(cmd_reg & I2C_IC_DATA_CMD_DAT_BITS);
+			// Check if this is the 1st byte we have received
+			if (cmd_reg & I2C_IC_DATA_CMD_FIRST_DATA_BYTE_BITS) {
+				// as this is a new message, reset the buffer pointer
+				bp = buffer;
+			}
+			if ((bp-buffer) < BUF_LEN) {
+				*bp = value;
+				bp ++;
+			}
 		}
 		message_flag = MSG_RX;
     }
@@ -83,7 +87,7 @@ void i2c_handler() {
 
 		// Write the data from the current address in RAM
 		i2c0->hw->data_cmd = (uint32_t)(adc_result >> 8);
-		i2c0->hw->data_cmd = (uint32_t)(valve_state);
+		//i2c0->hw->data_cmd = (uint32_t)(valve_state);
 
 		// Clear the interrupt
 		i2c0->hw->clr_rd_req;
@@ -109,7 +113,7 @@ int main() {
 	// initialize the I2C
 	uint baudrate = i2c_init(i2c0, 100000);
 	i2c_set_slave_mode(i2c0, true, 11);
-	i2c_init_slave_intr(i2c0, i2c_handler, 0, (uint32_t)(I2C_IC_INTR_MASK_M_RD_REQ_BITS | I2C_IC_INTR_MASK_M_RX_FULL_BITS));
+	i2c_init_slave_intr(i2c0, i2c_handler, 2, (uint32_t)(I2C_IC_INTR_MASK_M_RD_REQ_BITS | I2C_IC_INTR_MASK_M_RX_FULL_BITS));
 	// configure gpio pins for i2c operation
 	gpio_set_function(I2C_SCL, GPIO_FUNC_I2C);
 	gpio_set_function(I2C_SDA, GPIO_FUNC_I2C);

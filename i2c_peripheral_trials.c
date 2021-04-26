@@ -7,11 +7,18 @@
 #include "hardware/pwm.h"
 
 #define BUF_LEN 100
+#define MSG_RX 1
+#define MSG_TX 2
+#define CMD_BYTE 0
+#define OPEN_VALVE 1
+#define CLOSE_VALVE 2
+#define MSG_SIZE 2
 
 const uint LED_PIN = 25;
 const uint POT_IN = 26;
 const uint I2C_SCL = 1;
 const uint I2C_SDA = 0;
+const uint VLV_CTRL = 2;
 const float conversion_factor = 3.3f / (1 << 12);
 const uint I2C_ADDR = 0x30;
 
@@ -36,9 +43,10 @@ void i2c_init_slave_intr(i2c_inst_t* i2c, void (* irq_handler)(void), uint rx_fu
 }
 
 uint8_t buffer[BUF_LEN];
-uint8_t message_size = 0;
-uint8_t print_flag = 0;
+uint8_t* bp = buffer;
+uint8_t message_flag = 0;
 uint16_t adc_result = 0;
+uint8_t valve_state = 0;
 
 void i2c_handler() {
     // Get interrupt status
@@ -61,25 +69,25 @@ void i2c_handler() {
 		// Check if this is the 1st byte we have received
 		if (cmd_reg & I2C_IC_DATA_CMD_FIRST_DATA_BYTE_BITS) {
 			// as this is a new message, reset the buffer pointer
-			message_size = 0;
+			bp = buffer;
 		}
 		if ((message_size) < BUF_LEN) {
-			buffer[message_size] = value;
-			message_size ++;
+			*bp = value;
+			bp ++;
 		}
-		print_flag = 2;
+		message_flag = MSG_RX;
     }
 
-    // Check to see if the I2C controller is requesting data from the RAM
-    if (status & I2C_IC_INTR_STAT_R_RD_REQ_BITS) {
+	// Check to see if the I2C controller is requesting data from the RAM
+	if (status & I2C_IC_INTR_STAT_R_RD_REQ_BITS) {
 
-        // Write the data from the current address in RAM
-        i2c0->hw->data_cmd = (uint32_t)(adc_result >> 8);
+		// Write the data from the current address in RAM
+		i2c0->hw->data_cmd = (uint32_t)(adc_result >> 8);
+		i2c0->hw->data_cmd = (uint32_t)(valve_state);
 
-        // Clear the interrupt
-        i2c0->hw->clr_rd_req;
-		print_flag = 1;
-    }
+		// Clear the interrupt
+		i2c0->hw->clr_rd_req;
+	}
 }
 
 int main() {
@@ -89,6 +97,7 @@ int main() {
 	bi_decl(bi_1pin_with_name(I2C_SDA, "I2C Serial Data Line"));
 	bi_decl(bi_1pin_with_name(I2C_SCL, "I2C Serial Clock Line"));
 	bi_decl(bi_2pins_with_func(I2C_SCL, I2C_SDA, GPIO_FUNC_I2C));
+	bi_decl(bi_1pin_with_name(VLV_CTRL, "Valve control Pin"));
 
 	stdio_init_all();
 
@@ -107,23 +116,36 @@ int main() {
 	// enable the pullups on the i2c line
 	gpio_pull_up(I2C_SDA);
 	gpio_pull_up(I2C_SCL);
-	
+
+	// initialize the valve output
+	gpio_init(VLV_CTRL);
+	gpio_set_dir(VLV_CTRL, GPIO_OUT);
+
+
 	while (true) {
 		adc_result = adc_read();
-		printf("Raw value: 0x%03x, shifted value: 0x%03x voltage: %f V\n", adc_result, (adc_result >> 6), adc_result * conversion_factor);
-		sleep_ms(500);
-		if (print_flag == 1) {
-			printf("Received i2c packet it was an adc read\n");
-			print_flag = 0;
-		}
-		if (print_flag == 2) {
-			printf("Current Address: 0x%03d\n", message_size);;
-			printf("Buffer Contents: ");
-			for (uint8_t i=0; i<message_size; i++) {
+		if (message_flag == MSG_RX) {
+			printf("Received i2c packet\n");
+			uint8_t size = bp - buffer;
+			if (size != MSG_SIZE){
+				printf("Invalid size of %d", size);
+				bp = buffer;
+				continue;
+			}
+			switch (buffer[CMD_BYTE]) {
+				case OPEN_VALVE:
+					gpio_put(VLV_CTRL);
+					break;
+				case CLOSE_VALVE:
+					gpio_put(VLV_CTRL);
+					break;
+			}
+			printf("Message Contents: ");
+			for (uint8_t i=0; i<(bp-buffer); i++) {
 				printf("0x%02x ", buffer[i]);
 			}
 			printf("\n");
-			print_flag = 0;
+			message_flag = 0;
 		}
 	}
 }

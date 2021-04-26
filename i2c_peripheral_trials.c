@@ -109,7 +109,7 @@ int main() {
 	gpio_pull_up(I2C_SCL);
 	
 	while (true) {
-		uint16_t adc_result = adc_read();
+		adc_result = adc_read();
 		printf("Raw value: 0x%03x, shifted value: 0x%03x voltage: %f V\n", adc_result, (adc_result >> 6), adc_result * conversion_factor);
 		sleep_ms(500);
 		if (print_flag == 1) {
@@ -117,8 +117,13 @@ int main() {
 			print_flag = 0;
 		}
 		if (print_flag == 2) {
-			printf("Received i2c packet it was an write: %02x\n", buffer[0]);
-			printf("Current Address: %02x\n", buf_addr-buffer);
+			printf("Current Address: 0x%03d\n", buf_addr-buffer);
+			uint8_t size = (uint8_t)(buf_addr - buffer);
+			printf("Buffer Contents: ");
+			for (uint8_t i=0; i<size; i++) {
+				printf("0x%02x ", buffer[i]);
+			}
+			printf("\n");
 			print_flag = 0;
 		}
 	}

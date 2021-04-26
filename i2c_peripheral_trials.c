@@ -56,7 +56,7 @@ void i2c_handler() {
     if (status & I2C_IC_INTR_STAT_R_RX_FULL_BITS) {
 		// Read the data (this will clear the interrupt)
 		uint32_t cmd_reg = i2c0->hw->data_cmd;
-		uint8_t value = (uint8_t)(i2c0->hw->data_cmd & I2C_IC_DATA_CMD_DAT_BITS);
+		uint8_t value = (uint8_t)(cmd_reg & I2C_IC_DATA_CMD_DAT_BITS);
 
 		// Check if this is the 1st byte we have received
 		if (cmd_reg & I2C_IC_DATA_CMD_FIRST_DATA_BYTE_BITS) {

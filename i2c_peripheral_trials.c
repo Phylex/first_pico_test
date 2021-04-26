@@ -113,9 +113,11 @@ int main() {
 		printf("Raw value: 0x%03x, shifted value: 0x%03x voltage: %f V\n", adc_result, (adc_result >> 6), adc_result * conversion_factor);
 		sleep_ms(500);
 		if (print_flag == 1)
-			printf("Received i2c packet it was an adc read");
+			printf("Received i2c packet it was an adc read\n");
+			print_flag = 0;
 		if (print_flag == 2)
-			printf("Received i2c packet it was an write: %03x", buffer[0]);
+			printf("Received i2c packet it was an write: %02x\n", buffer[0]);
+			printf("Current Address: %02x\n", buf_addr-buffer);
+			print_flag = 0;
 	}
 }
-

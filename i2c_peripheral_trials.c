@@ -134,10 +134,10 @@ int main() {
 			}
 			switch (buffer[CMD_BYTE]) {
 				case OPEN_VALVE:
-					gpio_put(VLV_CTRL);
+					gpio_put(VLV_CTRL, 1);
 					break;
 				case CLOSE_VALVE:
-					gpio_put(VLV_CTRL);
+					gpio_put(VLV_CTRL, 0);
 					break;
 			}
 			printf("Message Contents: ");

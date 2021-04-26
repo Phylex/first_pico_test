@@ -36,7 +36,7 @@ void i2c_init_slave_intr(i2c_inst_t* i2c, void (* irq_handler)(void), uint rx_fu
 }
 
 uint8_t buffer[BUF_LEN];
-uint8_t *buf_addr = buffer;
+uint8_t message_size = 0;
 uint8_t print_flag = 0;
 uint16_t adc_result = 0;
 
@@ -61,11 +61,11 @@ void i2c_handler() {
 		// Check if this is the 1st byte we have received
 		if (cmd_reg & I2C_IC_DATA_CMD_FIRST_DATA_BYTE_BITS) {
 			// as this is a new message, reset the buffer pointer
-			buf_addr = buffer;
+			message_size = 0;
 		}
-		if ((buf_addr-buffer) <= BUF_LEN) {
-			*buf_addr = value;
-			buf_addr ++;
+		if ((message_size) < BUF_LEN) {
+			buffer[message_size] = value;
+			message_size ++;
 		}
 		print_flag = 2;
     }
@@ -117,10 +117,9 @@ int main() {
 			print_flag = 0;
 		}
 		if (print_flag == 2) {
-			printf("Current Address: 0x%03d\n", buf_addr-buffer);
-			uint8_t size = (uint8_t)(buf_addr - buffer);
+			printf("Current Address: 0x%03d\n", message_size);;
 			printf("Buffer Contents: ");
-			for (uint8_t i=0; i<size; i++) {
+			for (uint8_t i=0; i<message_size; i++) {
 				printf("0x%02x ", buffer[i]);
 			}
 			printf("\n");

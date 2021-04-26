@@ -10,10 +10,10 @@
 
 const uint LED_PIN = 25;
 const uint POT_IN = 26;
-const uint I2C_SCL = 2;
-const uint I2C_SDA = 1;
+const uint I2C_SCL = 1;
+const uint I2C_SDA = 0;
 const float conversion_factor = 3.3f / (1 << 12);
-const uint I2C_ADDR = 0x11;
+const uint I2C_ADDR = 0x30;
 
 // i2c0->hw->intr_mask = (I2C_IC_INTR_MASK_M_RD_REQ_BITS | I2C_IC_INTR_MASK_M_RX_FULL_BITS);
 void i2c_init_slave_intr(i2c_inst_t* i2c, void (* irq_handler)(void), uint rx_full_thresh, uint32_t interrupts_enabled){
@@ -50,25 +50,23 @@ void i2c_handler() {
 	// The peripheral is stateless, so that two consecutive requests will be answered independently
 	// from each other, only referencing the device state.
 	if (status & I2C_IC_INTR_STAT_R_TX_ABRT_BITS) {
-		volatile uint32_t tx_clr = i2c0->hw->clr_tx_abrt;
+		i2c0->hw->clr_tx_abrt;
 	}
 	// Check to see if we have received data from the I2C controller
     if (status & I2C_IC_INTR_STAT_R_RX_FULL_BITS) {
-
-        // Read the data (this will clear the interrupt)
-        uint32_t cmd_reg = i2c0->hw->data_cmd;
+		// Read the data (this will clear the interrupt)
+		uint32_t cmd_reg = i2c0->hw->data_cmd;
 		uint8_t value = (uint8_t)(i2c0->hw->data_cmd & I2C_IC_DATA_CMD_DAT_BITS);
 
-        // Check if this is the 1st byte we have received
-        if (cmd_reg & I2C_IC_DATA_CMD_FIRST_DATA_BYTE_BITS) {
-
-            // as this is a new message, reset the buffer pointer
-            buf_addr = buffer;
+		// Check if this is the 1st byte we have received
+		if (cmd_reg & I2C_IC_DATA_CMD_FIRST_DATA_BYTE_BITS) {
+			// as this is a new message, reset the buffer pointer
+			buf_addr = buffer;
 		}
 		if ((buf_addr-buffer) <= BUF_LEN) {
 			*buf_addr = value;
 			buf_addr ++;
-        }
+		}
 		print_flag = 2;
     }
 
@@ -102,7 +100,7 @@ int main() {
 	// initialize the I2C
 	uint baudrate = i2c_init(i2c0, 100000);
 	i2c_set_slave_mode(i2c0, true, 11);
-	i2c_init_slave_intr(i2c0, i2c_handler, 1, (uint32_t)(I2C_IC_INTR_MASK_M_RD_REQ_BITS | I2C_IC_INTR_MASK_M_RX_FULL_BITS));
+	i2c_init_slave_intr(i2c0, i2c_handler, 0, (uint32_t)(I2C_IC_INTR_MASK_M_RD_REQ_BITS | I2C_IC_INTR_MASK_M_RX_FULL_BITS));
 	// configure gpio pins for i2c operation
 	gpio_set_function(I2C_SCL, GPIO_FUNC_I2C);
 	gpio_set_function(I2C_SDA, GPIO_FUNC_I2C);

@@ -71,7 +71,7 @@ void i2c_handler() {
 			// as this is a new message, reset the buffer pointer
 			bp = buffer;
 		}
-		if ((message_size) < BUF_LEN) {
+		if ((bp-buffer) < BUF_LEN) {
 			*bp = value;
 			bp ++;
 		}
